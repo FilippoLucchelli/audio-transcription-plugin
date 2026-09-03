@@ -6,7 +6,14 @@ from pathlib import Path
 
 import cache
 import hardware
-from audio_processing import AUDIO_EXTENSIONS, check_ffmpeg, extract_audio, denoise_audio
+from audio_processing import (
+    MEDIA_EXTENSIONS,
+    AUDIO_EXTENSIONS,
+    check_ffmpeg,
+    extract_audio,
+    denoise_audio,
+    audio_duration_seconds,
+)
 from transcription import transcribe_and_diarize
 from exporters import export_text, export_srt, export_json
 
@@ -20,15 +27,16 @@ STAGE_LABELS = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Transcribe and diarize (per speaker) an audio/video file."
+        description="Transcribe and diarize (per speaker) an audio/video file, "
+        "or every audio/video file in a folder."
     )
-    parser.add_argument("input", help="Path to the audio or video file to transcribe")
+    parser.add_argument("input", help="Path to an audio/video file, or a folder containing several")
     parser.add_argument("-o", "--output-dir", default="output", help="Output folder")
     parser.add_argument(
         "--model",
         default=None,
         help="Whisper model size (tiny/base/small/medium/large-v3); "
-        "default: automatic choice based on available hardware",
+        "default: automatic choice based on available hardware and language",
     )
     parser.add_argument("--language", default=None, help="Language code (e.g. 'en'); default: auto-detect")
     parser.add_argument(
@@ -65,13 +73,23 @@ def print_progress(stage: str, pct: float) -> None:
     print(f"\r{label}: {pct:5.1f}%", end=end, flush=True)
 
 
+def format_duration(seconds: float) -> str:
+    minutes, secs = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h{minutes:02d}m"
+    if minutes:
+        return f"{minutes}m{secs:02d}s"
+    return f"{secs}s"
+
+
 def resolve_settings(args) -> dict:
     """Applies the values chosen by the user, and for the ones left unset uses
-    the automatic choice based on the available hardware."""
+    the automatic choice based on the available hardware and language."""
     if args.model and args.device and args.compute_type:
         return {"model": args.model, "device": args.device, "compute_type": args.compute_type}
 
-    recommended = hardware.recommend_settings()
+    recommended = hardware.recommend_settings(language=args.language)
     resolved = {
         "model": args.model or recommended["model"],
         "device": args.device or recommended["device"],
@@ -84,16 +102,14 @@ def resolve_settings(args) -> dict:
     return resolved
 
 
-def run(args) -> None:
-    check_ffmpeg()
+def iter_media_files(directory: Path) -> list[Path]:
+    return sorted(
+        p for p in directory.iterdir()
+        if p.is_file() and p.suffix.lower() in MEDIA_EXTENSIONS
+    )
 
-    input_path = Path(args.input)
-    if not input_path.exists():
-        raise FileNotFoundError(f"File not found: {input_path}")
 
-    out_dir = Path(args.output_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
+def process_file(args, input_path: Path, out_dir: Path) -> None:
     if input_path.suffix.lower() in AUDIO_EXTENSIONS:
         audio_path = str(input_path)
     else:
@@ -119,6 +135,16 @@ def run(args) -> None:
     if result is not None:
         print("Found cached transcription: skipping the pipeline.")
     else:
+        try:
+            duration = audio_duration_seconds(audio_path)
+            estimate = hardware.estimate_processing_seconds(duration, settings["device"], settings["model"])
+            print(
+                f"Audio duration: ~{format_duration(duration)}. Estimated processing time: "
+                f"~{format_duration(estimate)} (rough estimate, actual varies by hardware/audio)."
+            )
+        except Exception:
+            pass  # the estimate is a best-effort convenience, never block the pipeline on it
+
         result = transcribe_and_diarize(
             audio_path,
             model_size=settings["model"],
@@ -137,6 +163,40 @@ def run(args) -> None:
     export_srt(result, str(out_dir / f"{stem}.srt"))
     export_json(result, str(out_dir / f"{stem}.json"))
 
+
+def run(args) -> None:
+    check_ffmpeg()
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        raise FileNotFoundError(f"File not found: {input_path}")
+
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if input_path.is_dir():
+        files = iter_media_files(input_path)
+        if not files:
+            raise FileNotFoundError(f"No audio/video files found in: {input_path}")
+
+        print(f"Found {len(files)} file(s) in {input_path}.")
+        failures = []
+        for i, file_path in enumerate(files, start=1):
+            print(f"\n[{i}/{len(files)}] {file_path.name}")
+            try:
+                process_file(args, file_path, out_dir)
+            except (FileNotFoundError, ValueError, RuntimeError) as exc:
+                print(f"Error processing {file_path.name}: {exc}", file=sys.stderr)
+                failures.append((file_path.name, str(exc)))
+
+        print(f"\nDone. Processed {len(files) - len(failures)}/{len(files)} file(s). Output in: {out_dir}")
+        if failures:
+            print(f"{len(failures)} file(s) failed:")
+            for name, err in failures:
+                print(f" - {name}: {err}")
+        return
+
+    process_file(args, input_path, out_dir)
     print(f"Done. Output in: {out_dir}")
 
 

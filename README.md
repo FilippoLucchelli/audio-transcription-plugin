@@ -6,9 +6,18 @@ No data is sent to cloud services (aside from downloading models from Hugging Fa
 Works on Windows, Linux, and macOS.
 
 The whisper model, device, and compute type are picked automatically based on the
-detected hardware (CUDA/VRAM, CPU cores, RAM) unless you specify them explicitly.
+detected hardware (CUDA/VRAM, CPU cores, RAM) and the target language (non-English
+languages are never given a model smaller than `small`) unless you specify them
+explicitly. Before running, a rough time estimate is printed based on audio duration
+and the chosen model/device.
+
 Results are cached by audio content + parameters, so asking further questions about
-the same recording doesn't re-run the (expensive) pipeline.
+the same recording doesn't re-run the (expensive) pipeline. The cache self-prunes
+(30-day TTL, 2 GB budget by default, both configurable) so it never needs manual
+cleanup.
+
+You can point it at a single file or a whole folder — in the latter case every
+audio/video file inside is processed, with a per-file summary at the end.
 
 ## Installation
 
@@ -105,6 +114,7 @@ tells you exactly which of the steps above is still missing, if any.
 
 ```
 audio-transcription-plugin/
+├── .github/workflows/ci.yml   # syntax/JSON validation on every push
 ├── .claude-plugin/
 │   └── marketplace.json
 └── plugins/
@@ -122,7 +132,7 @@ audio-transcription-plugin/
                     ├── main.py
                     ├── hardware.py       # hardware detection + dynamic model selection
                     ├── cache.py          # result cache keyed by audio content + params
-                    ├── audio_processing.py
+                    ├── audio_processing.py   # extraction, duration probing, denoise
                     ├── transcription.py
                     └── exporters.py
 ```
@@ -133,9 +143,12 @@ audio-transcription-plugin/
 cd plugins/audio-transcription/skills/audio-transcription
 run.bat "path/to/file.mp4" -o output --language en    # Windows
 ./run.sh "path/to/file.mp4" -o output --language en   # Linux/macOS
+
+# or point it at a folder to process every audio/video file inside it:
+run.bat "path/to/recordings" -o output --language en
 ```
 
-Output is generated in `output/<name>.{txt,srt,json}`.
+Output is generated in `output/<name>.{txt,srt,json}` per input file.
 
 ## Privacy
 

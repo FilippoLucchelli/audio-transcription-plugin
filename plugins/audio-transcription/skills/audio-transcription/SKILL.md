@@ -46,9 +46,25 @@ python pipeline\main.py "<path to audio or video file>" -o output --model medium
 
 If you don't specify `--model`/`--device`/`--compute-type`, the pipeline picks
 them automatically based on the detected hardware (`pipeline/hardware.py`:
-available GPU/VRAM, CPU cores, RAM) and prints the choice with its reasoning.
+available GPU/VRAM, CPU cores, RAM) and the target `--language` — non-English
+languages are never given a model smaller than `small`, since `tiny`/`base`
+are unreliable outside English — and prints the choice with its reasoning.
 Leave these parameters unset unless the user explicitly asks for a specific
 model or device.
+
+Before actually running, the pipeline prints a rough estimate of the audio
+duration and expected processing time (based on the chosen model/device); it's
+a ballpark figure, not a guarantee, useful to warn the user before a
+potentially long run (e.g. `large-v3` on CPU).
+
+### Batch mode
+
+`input` can also be a folder instead of a single file: the pipeline processes
+every audio/video file inside it (one at a time, same parameters for all) and
+reports a per-file summary at the end, continuing past individual failures
+rather than stopping the whole batch. Use this when the user has several
+recordings to transcribe in one go (e.g. "transcribe all the calls in this
+folder").
 
 Adjust the other parameters based on the user's request:
 
@@ -85,6 +101,9 @@ denoise). If the user asks further questions about the same recording (even
 in a different session), there's no need to re-run the pipeline: a second run
 on the same file with the same parameters will automatically hit the cache
 and return almost instantly. The cache should never be read or edited by hand.
+It self-prunes (entries older than 30 days, or the oldest ones if it grows
+past 2 GB — both configurable via `AUDIO_TRANSCRIPTION_CACHE_TTL_DAYS` and
+`AUDIO_TRANSCRIPTION_CACHE_MAX_MB`), so it never needs manual cleanup.
 
 ## Step 3 — Report the result
 
@@ -130,7 +149,7 @@ audio-transcription/
     ├── main.py            # CLI entry point
     ├── hardware.py          # hardware detection + dynamic model selection
     ├── cache.py              # result cache keyed by file + parameters
-    ├── audio_processing.py  # audio extraction + optional noise reduction
+    ├── audio_processing.py  # audio extraction, duration probing, optional noise reduction
     ├── transcription.py     # WhisperX transcription + pyannote diarization
     └── exporters.py          # export to txt / srt / json
 ```

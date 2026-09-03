@@ -4,6 +4,33 @@ import os
 
 import torch
 
+MODEL_SIZES = ["tiny", "base", "small", "medium", "large-v3"]
+
+# Minimum model size for non-English languages: the smallest models (tiny/base)
+# are trained mostly on English and degrade a lot on other languages, so bump
+# up to at least "small" whenever a non-English language is requested.
+MIN_MODEL_NON_ENGLISH = "small"
+
+# Rough real-time factor (seconds of compute per second of audio) per
+# (device, model). These are illustrative ballpark figures, not measured on
+# this machine: actual speed varies with CPU/GPU generation, audio content,
+# etc. Used only to give the user a rough time estimate before running.
+RTF_ESTIMATES = {
+    ("cpu", "tiny"): 0.3,
+    ("cpu", "base"): 0.5,
+    ("cpu", "small"): 1.0,
+    ("cpu", "medium"): 2.5,
+    ("cpu", "large-v3"): 5.0,
+    ("cuda", "tiny"): 0.05,
+    ("cuda", "base"): 0.08,
+    ("cuda", "small"): 0.15,
+    ("cuda", "medium"): 0.3,
+    ("cuda", "large-v3"): 0.5,
+}
+# Extra overhead for alignment + diarization on top of the raw transcription
+# time, expressed as a fraction of the transcription time.
+DIARIZATION_OVERHEAD_FACTOR = 0.4
+
 
 def detect_hardware() -> dict:
     """Detects CUDA/VRAM, CPU core count, and RAM available on the current machine."""
@@ -30,8 +57,9 @@ def detect_hardware() -> dict:
     }
 
 
-def recommend_settings(hardware: dict | None = None) -> dict:
-    """Picks device/compute_type/model based on the available hardware.
+def recommend_settings(hardware: dict | None = None, language: str | None = None) -> dict:
+    """Picks device/compute_type/model based on the available hardware and,
+    optionally, the target language.
 
     Also returns 'reason', a human-readable explanation of the choice (for
     logging/reporting to the user).
@@ -67,6 +95,11 @@ def recommend_settings(hardware: dict | None = None) -> dict:
             model = "base"
             reason = f"No CUDA GPU; {cpu_count} CPU cores and ~{ram:.1f} GB RAM (limited resources)"
 
+    if language and language.lower() not in ("en", "english"):
+        if MODEL_SIZES.index(model) < MODEL_SIZES.index(MIN_MODEL_NON_ENGLISH):
+            model = MIN_MODEL_NON_ENGLISH
+            reason += f"; bumped to '{model}' for non-English language '{language}' (small models are unreliable outside English)"
+
     return {
         "device": device,
         "compute_type": compute_type,
@@ -74,6 +107,15 @@ def recommend_settings(hardware: dict | None = None) -> dict:
         "reason": reason,
         "hardware": hw,
     }
+
+
+def estimate_processing_seconds(audio_seconds: float, device: str, model: str) -> float:
+    """Very rough estimate of wall-clock processing time, for reporting to the
+    user before running the (potentially long) pipeline. Not a guarantee."""
+    rtf = RTF_ESTIMATES.get((device, model))
+    if rtf is None:
+        rtf = RTF_ESTIMATES.get(("cpu", "medium"))
+    return audio_seconds * rtf * (1 + DIARIZATION_OVERHEAD_FACTOR)
 
 
 if __name__ == "__main__":

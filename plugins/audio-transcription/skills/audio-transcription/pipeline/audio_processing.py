@@ -10,6 +10,8 @@ import soundfile as sf
 TARGET_SAMPLE_RATE = 16000
 
 AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg"}
+VIDEO_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
+MEDIA_EXTENSIONS = AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
 
 
 def check_ffmpeg() -> None:
@@ -67,3 +69,9 @@ def denoise_audio(audio_path: str, output_dir: str) -> str:
 
     sf.write(str(output_path), reduced, sample_rate)
     return str(output_path)
+
+
+def audio_duration_seconds(audio_path: str) -> float:
+    """Returns the duration in seconds of a (post-extraction) audio file."""
+    info = sf.info(audio_path)
+    return info.frames / info.samplerate
