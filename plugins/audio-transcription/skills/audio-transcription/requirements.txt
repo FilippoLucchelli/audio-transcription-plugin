@@ -1,0 +1,5 @@
+whisperx
+torch
+torchaudio
+noisereduce==3.0.2
+soundfile==0.12.1

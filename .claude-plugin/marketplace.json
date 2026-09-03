@@ -1,0 +1,15 @@
+{
+  "name": "audio-transcription-marketplace",
+  "owner": {
+    "name": "Filippo Lucchelli",
+    "email": "filippo.lucchelli@avvale.com"
+  },
+  "plugins": [
+    {
+      "name": "audio-transcription",
+      "source": "./plugins/audio-transcription",
+      "description": "Trascrizione e diarizzazione locale di file audio/video con WhisperX + pyannote.",
+      "version": "1.0.0"
+    }
+  ]
+}

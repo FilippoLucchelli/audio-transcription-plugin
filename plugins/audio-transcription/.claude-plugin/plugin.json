@@ -1,0 +1,9 @@
+{
+  "name": "audio-transcription",
+  "description": "Trascrizione e diarizzazione (identificazione speaker) locale di file audio/video con WhisperX + pyannote.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Filippo Lucchelli",
+    "email": "filippo.lucchelli@avvale.com"
+  }
+}
