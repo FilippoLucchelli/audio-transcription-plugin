@@ -42,19 +42,35 @@ Oppure, con il venv della skill già attivo (`venv\Scripts\activate`):
 python pipeline\main.py "<path al file audio o video>" -o output --model medium --language it
 ```
 
-Adatta i parametri in base alla richiesta dell'utente:
+Se non specifichi `--model`/`--device`/`--compute-type`, la pipeline li sceglie
+automaticamente in base all'hardware rilevato (`pipeline/hardware.py`: GPU/VRAM
+disponibile, core CPU, RAM) e stampa la scelta fatta con la motivazione. Lascia
+questi parametri vuoti a meno che l'utente non chieda esplicitamente un modello
+o un device specifico.
+
+Adatta gli altri parametri in base alla richiesta dell'utente:
 
 | Parametro | Quando usarlo |
 |---|---|
-| `--model` | `tiny/base/small/medium/large-v3`; usa `medium` di default, `large-v3` se serve massima qualità e c'è GPU |
+| `--model` | Solo se l'utente chiede esplicitamente una dimensione modello (`tiny/base/small/medium/large-v3`); altrimenti lascialo omesso (auto) |
 | `--language` | Codice lingua (es. `it`, `en`); omettilo per auto-detect |
-| `--device` | `cuda` se l'utente ha una GPU disponibile, altrimenti `cpu` (default) |
+| `--device` | Solo se l'utente vuole forzare `cuda`/`cpu`; altrimenti lascialo omesso (auto) |
 | `--min-speakers` / `--max-speakers` | Se l'utente sa quanti speaker sono presenti, aiuta la diarizzazione |
 | `--denoise` | Solo se l'audio è molto rumoroso e la trascrizione risulta scarsa |
 | `--hf-token` | Solo se l'utente preferisce passarlo a mano invece di impostare `HF_TOKEN` |
+| `--no-cache` | Solo se l'utente vuole forzare una nuova trascrizione ignorando una cache esistente |
 
 Se il token Hugging Face non è nell'ambiente ma l'utente te lo fornisce in chat,
 passalo con `--hf-token`, non salvarlo in file di configurazione.
+
+## Cache
+
+I risultati di trascrizione+diarizzazione sono cachati in `.cache/` (dentro la
+cartella della skill), indicizzati per contenuto audio + parametri (modello,
+lingua, speaker, denoise). Se l'utente ti chiede più domande sulla stessa
+registrazione (anche in sessioni diverse), non serve rilanciare la pipeline:
+un secondo run sullo stesso file con gli stessi parametri userà automaticamente
+la cache ed è quasi istantaneo. La cache non va né letta né modificata a mano.
 
 ## Passo 3 — Riporta il risultato
 
@@ -81,6 +97,8 @@ audio-transcription/
 ├── run.bat               # crea venv, installa dipendenze, esegue la pipeline (Windows)
 └── pipeline/
     ├── main.py            # entry point CLI
+    ├── hardware.py          # rilevamento hardware + scelta dinamica del modello
+    ├── cache.py              # cache dei risultati per file+parametri
     ├── audio_processing.py  # estrazione audio + pulizia rumore opzionale
     ├── transcription.py     # trascrizione WhisperX + diarizzazione pyannote
     └── exporters.py          # export in txt / srt / json

@@ -4,6 +4,8 @@ import argparse
 import sys
 from pathlib import Path
 
+import cache
+import hardware
 from audio_processing import AUDIO_EXTENSIONS, check_ffmpeg, extract_audio, denoise_audio
 from transcription import transcribe_and_diarize
 from exporters import export_text, export_srt, export_json
@@ -22,10 +24,23 @@ def parse_args():
     )
     parser.add_argument("input", help="Path al file audio o video da trascrivere")
     parser.add_argument("-o", "--output-dir", default="output", help="Cartella di output")
-    parser.add_argument("--model", default="medium", help="Dimensione modello whisper (tiny/base/small/medium/large-v3)")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Dimensione modello whisper (tiny/base/small/medium/large-v3); "
+        "default: scelta automatica in base all'hardware disponibile",
+    )
     parser.add_argument("--language", default=None, help="Codice lingua (es. 'it'); default: auto-detect")
-    parser.add_argument("--device", default="cpu", help="Device: 'cpu' o 'cuda'")
-    parser.add_argument("--compute-type", default="int8", help="Compute type whisperx (int8/float16/float32)")
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="Device: 'cpu' o 'cuda'; default: scelta automatica in base all'hardware disponibile",
+    )
+    parser.add_argument(
+        "--compute-type",
+        default=None,
+        help="Compute type whisperx (int8/float16/float32); default: scelta automatica",
+    )
     parser.add_argument("--min-speakers", type=int, default=None)
     parser.add_argument("--max-speakers", type=int, default=None)
     parser.add_argument("--hf-token", default=None, help="Token Hugging Face (in alternativa alla env var HF_TOKEN)")
@@ -35,6 +50,12 @@ def parse_args():
         default=False,
         help="Applica pulizia rumore aggiuntiva all'audio prima della trascrizione (default: disattivato)",
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        default=False,
+        help="Ignora la cache: rilancia sempre la pipeline anche se il risultato è già in cache",
+    )
     return parser.parse_args()
 
 
@@ -42,6 +63,25 @@ def print_progress(stage: str, pct: float) -> None:
     label = STAGE_LABELS.get(stage, stage)
     end = "\n" if pct >= 100 else ""
     print(f"\r{label}: {pct:5.1f}%", end=end, flush=True)
+
+
+def resolve_settings(args) -> dict:
+    """Applica i valori scelti dall'utente, e per quelli omessi usa la scelta
+    automatica basata sull'hardware disponibile."""
+    if args.model and args.device and args.compute_type:
+        return {"model": args.model, "device": args.device, "compute_type": args.compute_type}
+
+    recommended = hardware.recommend_settings()
+    resolved = {
+        "model": args.model or recommended["model"],
+        "device": args.device or recommended["device"],
+        "compute_type": args.compute_type or recommended["compute_type"],
+    }
+    print(
+        f"Scelta automatica ({recommended['reason']}): "
+        f"model={resolved['model']} device={resolved['device']} compute_type={resolved['compute_type']}"
+    )
+    return resolved
 
 
 def run(args) -> None:
@@ -64,17 +104,33 @@ def run(args) -> None:
         print("Pulizia rumore in corso...")
         audio_path = denoise_audio(audio_path, str(out_dir))
 
-    result = transcribe_and_diarize(
+    settings = resolve_settings(args)
+
+    cache_key = cache.compute_key(
         audio_path,
-        model_size=args.model,
+        model=settings["model"],
         language=args.language,
-        device=args.device,
-        compute_type=args.compute_type,
         min_speakers=args.min_speakers,
         max_speakers=args.max_speakers,
-        hf_token=args.hf_token,
-        progress_callback=print_progress,
+        denoise=args.denoise,
     )
+
+    result = None if args.no_cache else cache.load(cache_key)
+    if result is not None:
+        print("Trovata trascrizione in cache: salto la pipeline.")
+    else:
+        result = transcribe_and_diarize(
+            audio_path,
+            model_size=settings["model"],
+            language=args.language,
+            device=settings["device"],
+            compute_type=settings["compute_type"],
+            min_speakers=args.min_speakers,
+            max_speakers=args.max_speakers,
+            hf_token=args.hf_token,
+            progress_callback=print_progress,
+        )
+        cache.save(cache_key, result)
 
     stem = input_path.stem
     export_text(result, str(out_dir / f"{stem}.txt"))
