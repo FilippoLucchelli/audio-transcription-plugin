@@ -1,32 +1,32 @@
 # audio-transcription (Claude Code plugin)
 
-Plugin/skill per [Claude Code](https://claude.com/claude-code) che trascrive e diarizza
-(identifica gli speaker) file audio o video in locale, usando WhisperX + pyannote.
-Nessun dato viene inviato a servizi cloud (a parte il download dei modelli da Hugging Face).
+Plugin/skill for [Claude Code](https://claude.com/claude-code) that transcribes and
+diarizes (identifies speakers in) audio or video files locally, using WhisperX + pyannote.
+No data is sent to cloud services (aside from downloading models from Hugging Face).
 
-## Installazione
+## Installation
 
 ```
 /plugin marketplace add FilippoLucchelli/audio-transcription-plugin
 /plugin install audio-transcription@audio-transcription-marketplace
 ```
 
-Dopo l'installazione, chiedi semplicemente a Claude di trascrivere un file audio o video:
-la skill verifica prima i prerequisiti e poi esegue la pipeline.
+Once installed, just ask Claude to transcribe an audio or video file: the skill checks
+the prerequisites first, then runs the pipeline.
 
-## Prerequisiti
+## Prerequisites
 
-- Python 3.10, 3.11 o 3.12
-- [ffmpeg](https://ffmpeg.org/download.html) installato e nel PATH di sistema
-- Un token Hugging Face (variabile d'ambiente `HF_TOKEN` o parametro `--hf-token`), con le
-  condizioni d'uso del modello
+- Python 3.10, 3.11, or 3.12
+- [ffmpeg](https://ffmpeg.org/download.html) installed and available on the system PATH
+- A Hugging Face token (`HF_TOKEN` environment variable or `--hf-token` argument), with the
+  usage terms of the
   [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
-  accettate
+  model accepted
 
-Se manca qualcosa, la skill lo segnala con i passaggi esatti per risolvere (nessuna
-esecuzione parziale/workaround).
+If anything is missing, the skill reports it with the exact steps to fix it (no partial
+execution or workarounds).
 
-## Struttura
+## Structure
 
 ```
 audio-transcription-plugin/
@@ -38,10 +38,10 @@ audio-transcription-plugin/
         │   └── plugin.json
         └── skills/
             └── audio-transcription/
-                ├── SKILL.md           # istruzioni per l'agente
-                ├── check_env.py       # verifica prerequisiti
-                ├── requirements.txt   # dipendenze della pipeline
-                ├── run.bat             # setup venv + esecuzione (Windows)
+                ├── SKILL.md           # instructions for the agent
+                ├── check_env.py       # prerequisite checker
+                ├── requirements.txt   # pipeline dependencies
+                ├── run.bat             # venv setup + run (Windows)
                 └── pipeline/
                     ├── main.py
                     ├── audio_processing.py
@@ -49,16 +49,16 @@ audio-transcription-plugin/
                     └── exporters.py
 ```
 
-## Uso manuale (senza Claude)
+## Manual usage (without Claude)
 
 ```bash
 cd plugins/audio-transcription/skills/audio-transcription
-run.bat "path/al/file.mp4" -o output --model medium --language it
+run.bat "path/to/file.mp4" -o output --model medium --language en
 ```
 
-Output generato in `output/<nome>.{txt,srt,json}`.
+Output is generated in `output/<name>.{txt,srt,json}`.
 
 ## Privacy
 
-Verifica che la registrazione e la trascrizione delle chiamate sia conforme alle policy
-aziendali e al GDPR (consenso dei partecipanti).
+Make sure recording and transcribing calls complies with your company policies and
+GDPR (participant consent).
