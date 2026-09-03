@@ -82,6 +82,14 @@ ffmpeg -version
 
    The token is never written to a config file or committed anywhere by the skill.
 
+   **Security note**: with an environment variable, Claude never needs to see or
+   handle the token's value — the pipeline process reads it directly from the OS
+   environment, and `check_env.py` only checks that the variable is set, not what
+   it contains. If you give the token in chat instead, Claude does see it (it has
+   to, to pass it along) for that conversation, though it isn't persisted beyond
+   it. If you'd rather Claude never come into contact with the token at all, use
+   an environment variable.
+
 ### 4. (Optional) A CUDA-capable GPU
 
 Not required — the pipeline runs on CPU by default. If you have an NVIDIA GPU with
