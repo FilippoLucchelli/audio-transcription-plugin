@@ -22,15 +22,59 @@ the prerequisites first, then runs the pipeline.
 
 ## Prerequisites
 
-- Python 3.10, 3.11, or 3.12
-- [ffmpeg](https://ffmpeg.org/download.html) installed and available on the system PATH
-- A Hugging Face token (`HF_TOKEN` environment variable or `--hf-token` argument), with the
-  usage terms of the
-  [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
-  model accepted
+Before installing the plugin, make sure you have:
 
-If anything is missing, the skill reports it with the exact steps to fix it (no partial
-execution or workarounds).
+### 1. Python 3.10, 3.11, or 3.12
+
+Download from [python.org/downloads](https://www.python.org/downloads/). During
+setup on Windows, check "Add python.exe to PATH". Verify with:
+
+```bash
+python --version
+```
+
+### 2. ffmpeg, available on the system PATH
+
+- **Windows**: download a build from [ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+  (e.g. the "essentials" zip from gyan.dev), extract it, and add its `bin` folder to your
+  system PATH (Settings → search "environment variables" → Edit the `Path` variable).
+- **macOS**: `brew install ffmpeg`
+- **Linux (Debian/Ubuntu)**: `sudo apt install ffmpeg`
+
+Verify with (open a **new** terminal after installing):
+
+```bash
+ffmpeg -version
+```
+
+### 3. A Hugging Face account and access token
+
+1. Create an account at [huggingface.co](https://huggingface.co) if you don't have one.
+2. Generate an access token (read-only is enough) at
+   [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+3. Visit
+   [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
+   while logged in with that account, and click "Agree and access repository" to accept
+   the model's usage terms (required for diarization to work).
+4. Make the token available either as an environment variable:
+   ```bash
+   # Windows (PowerShell)
+   $env:HF_TOKEN = "hf_xxx"
+   # Linux/macOS
+   export HF_TOKEN="hf_xxx"
+   ```
+   or pass it per-run with `--hf-token hf_xxx`.
+
+### 4. (Optional) A CUDA-capable GPU
+
+Not required — the pipeline runs on CPU by default. If you have an NVIDIA GPU with
+CUDA installed, the skill detects it automatically and picks a larger/faster model.
+
+---
+
+None of the above needs to be done manually before installing the plugin itself:
+once installed, ask Claude to transcribe a file — it runs `check_env.py` first and
+tells you exactly which of the steps above is still missing, if any.
 
 ## Structure
 
