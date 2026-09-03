@@ -93,6 +93,22 @@ Once done, the generated files are in `output/<file_name>.{txt,srt,json}`
 Read `<file_name>.txt` and report its content to the user (or a summary, if
 very long), keeping the speaker tags (`SPEAKER_00`, ...) and timestamps.
 
+### Quality check
+
+While reading the transcript, judge whether it actually makes sense (coherent
+sentences, not garbled/repetitive/mostly empty). The pipeline does not run any
+automatic quality check — this judgment call is yours. If the transcript looks
+poor:
+
+1. Tell the user it looks low-quality and why (e.g. fragmented, repetitive,
+   large gaps).
+2. Ask if they want to retry with a bigger model (e.g. `--model medium` or
+   `--model large-v3` if hardware allows) — **don't retry automatically**: a
+   larger model can take much longer, especially on CPU, so it's the user's
+   call whether that trade-off is worth it.
+3. If they agree, re-run with `--no-cache` (otherwise the cached low-quality
+   result would just be returned again) and the larger `--model`.
+
 ## Errors during execution
 
 If `pipeline/main.py` fails with an error (e.g. file not found, ffmpeg failed,
