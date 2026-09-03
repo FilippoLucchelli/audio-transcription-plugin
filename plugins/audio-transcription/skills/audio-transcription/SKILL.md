@@ -62,8 +62,20 @@ Adatta gli altri parametri in base alla richiesta dell'utente:
 | `--hf-token` | Solo se l'utente preferisce passarlo a mano invece di impostare `HF_TOKEN` |
 | `--no-cache` | Solo se l'utente vuole forzare una nuova trascrizione ignorando una cache esistente |
 
-Se il token Hugging Face non è nell'ambiente ma l'utente te lo fornisce in chat,
-passalo con `--hf-token`, non salvarlo in file di configurazione.
+### Token Hugging Face
+
+Se `check_env.py` segnala che `HF_TOKEN` non è impostato, l'utente ha tre modi
+per fornirlo (in ordine di comodità):
+
+1. **Variabile d'ambiente permanente** — impostata una volta a livello di sistema,
+   disponibile sempre: `setx HF_TOKEN "hf_xxx"` su Windows (riavvia il terminale
+   dopo), oppure aggiungerla a `~/.bashrc`/`~/.zshrc` su Linux/macOS.
+2. **Variabile d'ambiente solo per la sessione corrente** — impostata nel terminale
+   prima di lanciare Claude Code (`$env:HF_TOKEN=...` su PowerShell, `export
+   HF_TOKEN=...` su Linux/macOS); vale solo per quella sessione.
+3. **Fornito direttamente in chat** — l'utente te lo scrive in un messaggio; in
+   questo caso passalo con `--hf-token` alla singola esecuzione, **non salvarlo**
+   in nessun file di configurazione né in cache.
 
 ## Cache
 

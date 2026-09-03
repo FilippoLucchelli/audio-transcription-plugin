@@ -56,14 +56,31 @@ ffmpeg -version
    [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
    while logged in with that account, and click "Agree and access repository" to accept
    the model's usage terms (required for diarization to work).
-4. Make the token available either as an environment variable:
-   ```bash
-   # Windows (PowerShell)
-   $env:HF_TOKEN = "hf_xxx"
-   # Linux/macOS
-   export HF_TOKEN="hf_xxx"
-   ```
-   or pass it per-run with `--hf-token hf_xxx`.
+4. Make the token available to the pipeline, in one of these ways (in order of
+   convenience):
+
+   - **Permanent environment variable** — set once at the OS level, so it's always
+     available to any program, including Claude Code:
+     ```bash
+     # Windows (persists across terminals/reboots — restart the terminal/Claude Code after)
+     setx HF_TOKEN "hf_xxx"
+     # Linux/macOS — add to ~/.bashrc or ~/.zshrc, then reload the shell
+     export HF_TOKEN="hf_xxx"
+     ```
+   - **Session-only environment variable** — set it just before launching Claude
+     Code in that terminal; it only lasts for that terminal session:
+     ```bash
+     # Windows (PowerShell)
+     $env:HF_TOKEN = "hf_xxx"
+     # Linux/macOS
+     export HF_TOKEN="hf_xxx"
+     ```
+   - **Give it to Claude directly in chat** — just tell Claude your token (e.g. "my
+     HF token is hf_xxx"); the skill passes it with `--hf-token` for that single run
+     only, without saving it anywhere. Repeat this each time if you don't set an
+     environment variable.
+
+   The token is never written to a config file or committed anywhere by the skill.
 
 ### 4. (Optional) A CUDA-capable GPU
 
