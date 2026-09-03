@@ -1,6 +1,6 @@
 ---
 name: audio-transcription
-description: Trascrive e diarizza (identifica gli speaker) l'audio di un file audio o video usando la pipeline locale bundled in questa skill (WhisperX + pyannote). Usa questa skill quando l'utente chiede di trascrivere, sottotitolare o analizzare l'audio/il parlato di una registrazione, chiamata, video o meeting (es. Teams).
+description: Trascrive e diarizza (identifica gli speaker) l'audio di un file audio o video usando la pipeline locale bundled in questa skill (WhisperX + pyannote). Usa questa skill ogni volta che l'utente ha un file audio/video (registrazione, chiamata, meeting, podcast — es. Teams) e vuole sapere cosa contiene o cosa è stato detto, anche se non usa parole come "trascrivi": rientrano anche richieste come "ascolta questo video", "di cosa parla", "riassumi l'audio/la call", "cosa si dice in questo file", "chi ha parlato di più/quanto", "sottotitola", "estrai il testo". In tutti questi casi la skill genera prima la trascrizione con gli speaker, poi risponde alla domanda specifica.
 ---
 
 # Audio Transcription
