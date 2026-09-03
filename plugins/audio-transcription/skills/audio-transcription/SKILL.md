@@ -1,120 +1,120 @@
 ---
 name: audio-transcription
-description: Trascrive e diarizza (identifica gli speaker) l'audio di un file audio o video usando la pipeline locale bundled in questa skill (WhisperX + pyannote). Usa questa skill ogni volta che l'utente ha un file audio/video (registrazione, chiamata, meeting, podcast — es. Teams) e vuole sapere cosa contiene o cosa è stato detto, anche se non usa parole come "trascrivi": rientrano anche richieste come "ascolta questo video", "di cosa parla", "riassumi l'audio/la call", "cosa si dice in questo file", "chi ha parlato di più/quanto", "sottotitola", "estrai il testo". In tutti questi casi la skill genera prima la trascrizione con gli speaker, poi risponde alla domanda specifica.
+description: Transcribes and diarizes (identifies speakers in) the audio of an audio or video file using the local pipeline bundled in this skill (WhisperX + pyannote). Use this skill whenever the user has an audio/video file (recording, call, meeting, podcast — e.g. Teams) and wants to know what it contains or what was said, even if they don't use words like "transcribe": this also covers requests like "listen to this video", "what is it about", "summarize the audio/call", "what is said in this file", "who talked the most/how much", "subtitle this", "extract the text". In all these cases the skill first generates the transcript with speakers, then answers the specific question.
 ---
 
 # Audio Transcription
 
-Skill autonoma: contiene la pipeline completa (`pipeline/`), le sue dipendenze
-(`requirements.txt`) e lo script di setup (`run.bat`). Non dipende da nessun
-altro repo o cartella esterna: puoi copiare l'intera cartella della skill su
-un'altra macchina e funziona allo stesso modo.
+Self-contained skill: it bundles the full pipeline (`pipeline/`), its dependencies
+(`requirements.txt`), and a setup script (`run.bat`/`run.sh`). It does not depend on
+any other repo or external folder: you can copy the entire skill folder to another
+machine and it works the same way.
 
-Tutti i comandi sotto vanno eseguiti dalla cartella della skill stessa
+All commands below must be run from the skill's own folder
 (`.claude/skills/audio-transcription/`).
 
-## Passo 1 — Verifica prerequisiti
+## Step 1 — Check prerequisites
 
-Prima di eseguire qualsiasi trascrizione, lancia:
+Before running any transcription, run:
 
 ```bash
 python check_env.py
 ```
 
-- Se esce con codice 0 → prosegui al Passo 2.
-- Se esce con codice 1 → **non tentare di eseguire la pipeline**. Riporta all'utente,
-  parola per parola, l'elenco dei problemi e delle soluzioni stampate dallo script
-  (versione Python, ffmpeg, venv/dipendenze, token Hugging Face). Fermati e aspetta
-  che l'utente risolva, a meno che non ti chieda di procedere comunque.
+- If it exits with code 0 → proceed to Step 2.
+- If it exits with code 1 → **do not attempt to run the pipeline**. Report to the
+  user, verbatim, the list of problems and fixes printed by the script (Python
+  version, ffmpeg, venv/dependencies, Hugging Face token). Stop and wait for the
+  user to fix them, unless they explicitly ask you to proceed anyway.
 
-## Passo 2 — Esegui la trascrizione
+## Step 2 — Run the transcription
 
-Senza gestire venv/dipendenze a mano (`run.bat`/`run.sh` creano il venv della
-skill e installano `requirements.txt` al primo avvio):
-
-```bash
-run.bat "<path al file audio o video>" -o output --model medium --language it   # Windows
-./run.sh "<path al file audio o video>" -o output --model medium --language it  # Linux/macOS
-```
-
-Oppure, con il venv della skill già attivo (`venv\Scripts\activate` su Windows,
-`source venv/bin/activate` su Linux/macOS):
+Without managing the venv/dependencies by hand (`run.bat`/`run.sh` create the
+skill's venv and install `requirements.txt` on first run):
 
 ```bash
-python pipeline\main.py "<path al file audio o video>" -o output --model medium --language it
+run.bat "<path to audio or video file>" -o output --model medium --language en   # Windows
+./run.sh "<path to audio or video file>" -o output --model medium --language en  # Linux/macOS
 ```
 
-Se non specifichi `--model`/`--device`/`--compute-type`, la pipeline li sceglie
-automaticamente in base all'hardware rilevato (`pipeline/hardware.py`: GPU/VRAM
-disponibile, core CPU, RAM) e stampa la scelta fatta con la motivazione. Lascia
-questi parametri vuoti a meno che l'utente non chieda esplicitamente un modello
-o un device specifico.
+Or, with the skill's venv already active (`venv\Scripts\activate` on Windows,
+`source venv/bin/activate` on Linux/macOS):
 
-Adatta gli altri parametri in base alla richiesta dell'utente:
+```bash
+python pipeline\main.py "<path to audio or video file>" -o output --model medium --language en
+```
 
-| Parametro | Quando usarlo |
+If you don't specify `--model`/`--device`/`--compute-type`, the pipeline picks
+them automatically based on the detected hardware (`pipeline/hardware.py`:
+available GPU/VRAM, CPU cores, RAM) and prints the choice with its reasoning.
+Leave these parameters unset unless the user explicitly asks for a specific
+model or device.
+
+Adjust the other parameters based on the user's request:
+
+| Parameter | When to use it |
 |---|---|
-| `--model` | Solo se l'utente chiede esplicitamente una dimensione modello (`tiny/base/small/medium/large-v3`); altrimenti lascialo omesso (auto) |
-| `--language` | Codice lingua (es. `it`, `en`); omettilo per auto-detect |
-| `--device` | Solo se l'utente vuole forzare `cuda`/`cpu`; altrimenti lascialo omesso (auto) |
-| `--min-speakers` / `--max-speakers` | Se l'utente sa quanti speaker sono presenti, aiuta la diarizzazione |
-| `--denoise` | Solo se l'audio è molto rumoroso e la trascrizione risulta scarsa |
-| `--hf-token` | Solo se l'utente preferisce passarlo a mano invece di impostare `HF_TOKEN` |
-| `--no-cache` | Solo se l'utente vuole forzare una nuova trascrizione ignorando una cache esistente |
+| `--model` | Only if the user explicitly asks for a model size (`tiny/base/small/medium/large-v3`); otherwise leave it unset (auto) |
+| `--language` | Language code (e.g. `en`, `it`); omit for auto-detect |
+| `--device` | Only if the user wants to force `cuda`/`cpu`; otherwise leave it unset (auto) |
+| `--min-speakers` / `--max-speakers` | If the user knows how many speakers are present, this helps diarization |
+| `--denoise` | Only if the audio is very noisy and the transcription comes out poor |
+| `--hf-token` | Only if the user prefers to pass it by hand instead of setting `HF_TOKEN` |
+| `--no-cache` | Only if the user wants to force a fresh transcription, ignoring an existing cached result |
 
-### Token Hugging Face
+### Hugging Face token
 
-Se `check_env.py` segnala che `HF_TOKEN` non è impostato, l'utente ha tre modi
-per fornirlo (in ordine di comodità):
+If `check_env.py` reports that `HF_TOKEN` is not set, the user has three ways to
+provide it (in order of convenience):
 
-1. **Variabile d'ambiente permanente** — impostata una volta a livello di sistema,
-   disponibile sempre: `setx HF_TOKEN "hf_xxx"` su Windows (riavvia il terminale
-   dopo), oppure aggiungerla a `~/.bashrc`/`~/.zshrc` su Linux/macOS.
-2. **Variabile d'ambiente solo per la sessione corrente** — impostata nel terminale
-   prima di lanciare Claude Code (`$env:HF_TOKEN=...` su PowerShell, `export
-   HF_TOKEN=...` su Linux/macOS); vale solo per quella sessione.
-3. **Fornito direttamente in chat** — l'utente te lo scrive in un messaggio; in
-   questo caso passalo con `--hf-token` alla singola esecuzione, **non salvarlo**
-   in nessun file di configurazione né in cache.
+1. **Permanent environment variable** — set once at the system level, always
+   available: `setx HF_TOKEN "hf_xxx"` on Windows (restart the terminal
+   afterwards), or add it to `~/.bashrc`/`~/.zshrc` on Linux/macOS.
+2. **Environment variable for the current session only** — set in the terminal
+   before launching Claude Code (`$env:HF_TOKEN=...` on PowerShell, `export
+   HF_TOKEN=...` on Linux/macOS); only valid for that session.
+3. **Given directly in chat** — the user writes it to you in a message; in this
+   case pass it with `--hf-token` for that single run, **do not save it**
+   anywhere (no config file, no cache).
 
 ## Cache
 
-I risultati di trascrizione+diarizzazione sono cachati in `.cache/` (dentro la
-cartella della skill), indicizzati per contenuto audio + parametri (modello,
-lingua, speaker, denoise). Se l'utente ti chiede più domande sulla stessa
-registrazione (anche in sessioni diverse), non serve rilanciare la pipeline:
-un secondo run sullo stesso file con gli stessi parametri userà automaticamente
-la cache ed è quasi istantaneo. La cache non va né letta né modificata a mano.
+Transcription+diarization results are cached in `.cache/` (inside the skill's
+folder), indexed by audio content + parameters (model, language, speakers,
+denoise). If the user asks further questions about the same recording (even
+in a different session), there's no need to re-run the pipeline: a second run
+on the same file with the same parameters will automatically hit the cache
+and return almost instantly. The cache should never be read or edited by hand.
 
-## Passo 3 — Riporta il risultato
+## Step 3 — Report the result
 
-Al termine, i file generati sono in `output/<nome_file>.{txt,srt,json}`
-(dentro la cartella della skill, salvo diverso `-o`).
-Leggi `<nome_file>.txt` e riporta all'utente il contenuto (o un riassunto, se molto lungo),
-mantenendo i tag speaker (`SPEAKER_00`, ...) e i timestamp.
+Once done, the generated files are in `output/<file_name>.{txt,srt,json}`
+(inside the skill's folder, unless a different `-o` was given).
+Read `<file_name>.txt` and report its content to the user (or a summary, if
+very long), keeping the speaker tags (`SPEAKER_00`, ...) and timestamps.
 
-## Errori durante l'esecuzione
+## Errors during execution
 
-Se `pipeline/main.py` fallisce con un errore (es. file non trovato, ffmpeg fallito,
-modello di diarizzazione non accettato su Hugging Face), riporta il messaggio di
-errore esatto all'utente insieme all'azione correttiva, senza tentare workaround
-che bypassino la pipeline (es. non installare pacchetti alternativi, non
-disattivare la diarizzazione se non richiesto).
+If `pipeline/main.py` fails with an error (e.g. file not found, ffmpeg failed,
+diarization model access not granted on Hugging Face), report the exact error
+message to the user along with the corrective action, without attempting
+workarounds that bypass the pipeline (e.g. don't install alternative packages,
+don't disable diarization unless asked to).
 
-## Struttura della skill
+## Skill structure
 
 ```
 audio-transcription/
 ├── SKILL.md
-├── check_env.py         # verifica prerequisiti, indica come risolverli
-├── requirements.txt     # dipendenze Python della pipeline
-├── run.bat               # crea venv, installa dipendenze, esegue la pipeline (Windows)
-├── run.sh                # equivalente di run.bat per Linux/macOS
+├── check_env.py         # checks prerequisites, tells you how to fix them
+├── requirements.txt     # pipeline's Python dependencies
+├── run.bat               # creates venv, installs dependencies, runs the pipeline (Windows)
+├── run.sh                # run.bat equivalent for Linux/macOS
 └── pipeline/
-    ├── main.py            # entry point CLI
-    ├── hardware.py          # rilevamento hardware + scelta dinamica del modello
-    ├── cache.py              # cache dei risultati per file+parametri
-    ├── audio_processing.py  # estrazione audio + pulizia rumore opzionale
-    ├── transcription.py     # trascrizione WhisperX + diarizzazione pyannote
-    └── exporters.py          # export in txt / srt / json
+    ├── main.py            # CLI entry point
+    ├── hardware.py          # hardware detection + dynamic model selection
+    ├── cache.py              # result cache keyed by file + parameters
+    ├── audio_processing.py  # audio extraction + optional noise reduction
+    ├── transcription.py     # WhisperX transcription + pyannote diarization
+    └── exporters.py          # export to txt / srt / json
 ```

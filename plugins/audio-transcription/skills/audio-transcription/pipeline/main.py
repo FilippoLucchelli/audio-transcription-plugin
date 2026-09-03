@@ -1,4 +1,4 @@
-"""CLI: estrazione audio -> (opzionale) pulizia rumore -> trascrizione+diarizzazione -> export."""
+"""CLI: audio extraction -> (optional) noise reduction -> transcription+diarization -> export."""
 
 import argparse
 import sys
@@ -11,50 +11,50 @@ from transcription import transcribe_and_diarize
 from exporters import export_text, export_srt, export_json
 
 STAGE_LABELS = {
-    "load_model": "Caricamento modello whisper",
-    "transcribe": "Trascrizione",
-    "align": "Allineamento parole",
-    "diarize": "Diarizzazione speaker",
+    "load_model": "Loading whisper model",
+    "transcribe": "Transcribing",
+    "align": "Aligning words",
+    "diarize": "Diarizing speakers",
 }
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Trascrivi e diarizza (per speaker) un file audio/video."
+        description="Transcribe and diarize (per speaker) an audio/video file."
     )
-    parser.add_argument("input", help="Path al file audio o video da trascrivere")
-    parser.add_argument("-o", "--output-dir", default="output", help="Cartella di output")
+    parser.add_argument("input", help="Path to the audio or video file to transcribe")
+    parser.add_argument("-o", "--output-dir", default="output", help="Output folder")
     parser.add_argument(
         "--model",
         default=None,
-        help="Dimensione modello whisper (tiny/base/small/medium/large-v3); "
-        "default: scelta automatica in base all'hardware disponibile",
+        help="Whisper model size (tiny/base/small/medium/large-v3); "
+        "default: automatic choice based on available hardware",
     )
-    parser.add_argument("--language", default=None, help="Codice lingua (es. 'it'); default: auto-detect")
+    parser.add_argument("--language", default=None, help="Language code (e.g. 'en'); default: auto-detect")
     parser.add_argument(
         "--device",
         default=None,
-        help="Device: 'cpu' o 'cuda'; default: scelta automatica in base all'hardware disponibile",
+        help="Device: 'cpu' or 'cuda'; default: automatic choice based on available hardware",
     )
     parser.add_argument(
         "--compute-type",
         default=None,
-        help="Compute type whisperx (int8/float16/float32); default: scelta automatica",
+        help="whisperx compute type (int8/float16/float32); default: automatic choice",
     )
     parser.add_argument("--min-speakers", type=int, default=None)
     parser.add_argument("--max-speakers", type=int, default=None)
-    parser.add_argument("--hf-token", default=None, help="Token Hugging Face (in alternativa alla env var HF_TOKEN)")
+    parser.add_argument("--hf-token", default=None, help="Hugging Face token (alternative to the HF_TOKEN env var)")
     parser.add_argument(
         "--denoise",
         action="store_true",
         default=False,
-        help="Applica pulizia rumore aggiuntiva all'audio prima della trascrizione (default: disattivato)",
+        help="Apply extra noise reduction to the audio before transcription (default: disabled)",
     )
     parser.add_argument(
         "--no-cache",
         action="store_true",
         default=False,
-        help="Ignora la cache: rilancia sempre la pipeline anche se il risultato è già in cache",
+        help="Ignore the cache: always re-run the pipeline even if the result is already cached",
     )
     return parser.parse_args()
 
@@ -66,8 +66,8 @@ def print_progress(stage: str, pct: float) -> None:
 
 
 def resolve_settings(args) -> dict:
-    """Applica i valori scelti dall'utente, e per quelli omessi usa la scelta
-    automatica basata sull'hardware disponibile."""
+    """Applies the values chosen by the user, and for the ones left unset uses
+    the automatic choice based on the available hardware."""
     if args.model and args.device and args.compute_type:
         return {"model": args.model, "device": args.device, "compute_type": args.compute_type}
 
@@ -78,7 +78,7 @@ def resolve_settings(args) -> dict:
         "compute_type": args.compute_type or recommended["compute_type"],
     }
     print(
-        f"Scelta automatica ({recommended['reason']}): "
+        f"Automatic choice ({recommended['reason']}): "
         f"model={resolved['model']} device={resolved['device']} compute_type={resolved['compute_type']}"
     )
     return resolved
@@ -89,7 +89,7 @@ def run(args) -> None:
 
     input_path = Path(args.input)
     if not input_path.exists():
-        raise FileNotFoundError(f"File non trovato: {input_path}")
+        raise FileNotFoundError(f"File not found: {input_path}")
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -97,11 +97,11 @@ def run(args) -> None:
     if input_path.suffix.lower() in AUDIO_EXTENSIONS:
         audio_path = str(input_path)
     else:
-        print(f"Estrazione audio da {input_path}...")
+        print(f"Extracting audio from {input_path}...")
         audio_path = extract_audio(str(input_path), str(out_dir))
 
     if args.denoise:
-        print("Pulizia rumore in corso...")
+        print("Running noise reduction...")
         audio_path = denoise_audio(audio_path, str(out_dir))
 
     settings = resolve_settings(args)
@@ -117,7 +117,7 @@ def run(args) -> None:
 
     result = None if args.no_cache else cache.load(cache_key)
     if result is not None:
-        print("Trovata trascrizione in cache: salto la pipeline.")
+        print("Found cached transcription: skipping the pipeline.")
     else:
         result = transcribe_and_diarize(
             audio_path,
@@ -137,7 +137,7 @@ def run(args) -> None:
     export_srt(result, str(out_dir / f"{stem}.srt"))
     export_json(result, str(out_dir / f"{stem}.json"))
 
-    print(f"Fatto. Output in: {out_dir}")
+    print(f"Done. Output in: {out_dir}")
 
 
 def main():
@@ -145,7 +145,7 @@ def main():
     try:
         run(args)
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
-        print(f"\nErrore: {exc}", file=sys.stderr)
+        print(f"\nError: {exc}", file=sys.stderr)
         sys.exit(1)
 
 

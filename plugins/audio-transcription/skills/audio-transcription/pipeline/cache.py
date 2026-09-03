@@ -1,10 +1,10 @@
-"""Cache dei risultati di trascrizione+diarizzazione, per evitare di rilanciare
-la pipeline (costosa) quando lo stesso file viene richiesto di nuovo con gli
-stessi parametri.
+"""Cache of transcription+diarization results, to avoid re-running the
+(expensive) pipeline when the same file is requested again with the same
+parameters.
 
-La cache vive in <skill_root>/.cache/ ed è indicizzata su un hash che combina
-il contenuto del file audio effettivamente trascritto e i parametri che
-influenzano il risultato (modello, lingua, speaker, denoise).
+The cache lives in <skill_root>/.cache/ and is indexed by a hash combining
+the content of the audio file actually transcribed and the parameters that
+affect the result (model, language, speakers, denoise).
 """
 
 import hashlib
@@ -23,7 +23,7 @@ def _hash_file(path: str, chunk_size: int = 1 << 20) -> str:
 
 
 def compute_key(audio_path: str, **params) -> str:
-    """Calcola la chiave di cache da contenuto audio + parametri della pipeline."""
+    """Computes the cache key from the audio content + pipeline parameters."""
     file_hash = _hash_file(audio_path)
     params_str = json.dumps(params, sort_keys=True)
     return hashlib.sha256(f"{file_hash}:{params_str}".encode("utf-8")).hexdigest()

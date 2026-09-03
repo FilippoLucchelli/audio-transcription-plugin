@@ -1,4 +1,4 @@
-"""Estrazione audio da video/audio e pulizia opzionale dal rumore."""
+"""Audio extraction from video/audio files and optional noise reduction."""
 
 import shutil
 import subprocess
@@ -13,21 +13,21 @@ AUDIO_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg"}
 
 
 def check_ffmpeg() -> None:
-    """Verifica che ffmpeg sia installato e nel PATH, altrimenti solleva un errore chiaro."""
+    """Checks that ffmpeg is installed and on the PATH, otherwise raises a clear error."""
     if shutil.which("ffmpeg") is None:
         raise RuntimeError(
-            "ffmpeg non trovato nel PATH di sistema. Installalo da https://ffmpeg.org/download.html "
-            "e assicurati che il comando 'ffmpeg' sia raggiungibile da terminale."
+            "ffmpeg not found on the system PATH. Install it from https://ffmpeg.org/download.html "
+            "and make sure the 'ffmpeg' command is reachable from a terminal."
         )
 
 
 def extract_audio(input_path: str, output_dir: str) -> str:
-    """Converte input_path in un .wav mono a 16kHz dentro output_dir e ne ritorna il path."""
+    """Converts input_path to a mono 16kHz .wav inside output_dir and returns its path."""
     check_ffmpeg()
 
     input_file = Path(input_path)
     if not input_file.exists():
-        raise FileNotFoundError(f"File non trovato: {input_path}")
+        raise FileNotFoundError(f"File not found: {input_path}")
 
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -45,16 +45,16 @@ def extract_audio(input_path: str, output_dir: str) -> str:
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg ha fallito la conversione di {input_path}:\n{result.stderr}")
+        raise RuntimeError(f"ffmpeg failed to convert {input_path}:\n{result.stderr}")
 
     return str(output_path)
 
 
 def denoise_audio(audio_path: str, output_dir: str) -> str:
-    """Applica noise reduction al file audio e ritorna il path del file pulito.
+    """Applies noise reduction to the audio file and returns the path of the cleaned file.
 
-    Disattivato di default nella pipeline: da usare solo se la trascrizione
-    risulta scarsa per audio molto rumoroso.
+    Disabled by default in the pipeline: only use it if the transcription
+    comes out poor for very noisy audio.
     """
     audio_file = Path(audio_path)
     data, sample_rate = sf.read(audio_path)

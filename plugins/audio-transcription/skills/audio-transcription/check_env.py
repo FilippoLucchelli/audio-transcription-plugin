@@ -1,8 +1,8 @@
-"""Verifica i prerequisiti della pipeline di trascrizione/diarizzazione di questa skill.
+"""Checks the prerequisites for this skill's transcription/diarization pipeline.
 
-Uso: python check_env.py   (da lanciare dalla cartella della skill, o con path assoluto)
-Esce con codice 0 se tutto è pronto, 1 se manca qualcosa (e stampa i passaggi
-esatti per risolvere ogni problema trovato).
+Usage: python check_env.py   (run from the skill's folder, or with an absolute path)
+Exits with code 0 if everything is ready, 1 if something is missing (and prints
+the exact steps to fix each problem found).
 """
 
 import importlib.util
@@ -35,20 +35,20 @@ def check_python_version() -> None:
     major, minor = sys.version_info[:2]
     if not (major == 3 and minor in (10, 11, 12)):
         fail(
-            f"Versione Python non supportata: {major}.{minor}",
-            "Installa Python 3.10, 3.11 o 3.12 da https://www.python.org/downloads/ "
-            f"e ricrea il venv della skill (cancella la cartella 'venv' ed esegui di nuovo {RUN_SCRIPT}, "
-            "oppure 'python -m venv venv' dentro la cartella della skill).",
+            f"Unsupported Python version: {major}.{minor}",
+            "Install Python 3.10, 3.11, or 3.12 from https://www.python.org/downloads/ "
+            f"and recreate the skill's venv (delete the 'venv' folder and run {RUN_SCRIPT} "
+            "again, or 'python -m venv venv' inside the skill's folder).",
         )
 
 
 def check_ffmpeg() -> None:
     if shutil.which("ffmpeg") is None:
         fail(
-            "ffmpeg non trovato nel PATH di sistema",
-            "Scarica ffmpeg da https://ffmpeg.org/download.html, estrai l'eseguibile "
-            "e aggiungi la cartella 'bin' al PATH di sistema. Verifica con 'ffmpeg -version' "
-            "da un nuovo terminale.",
+            "ffmpeg not found on the system PATH",
+            "Download ffmpeg from https://ffmpeg.org/download.html, extract the "
+            "executable, and add its 'bin' folder to the system PATH. Verify with "
+            "'ffmpeg -version' in a new terminal.",
         )
 
 
@@ -56,34 +56,34 @@ def check_venv_and_packages() -> None:
     venv_dir = SKILL_ROOT / "venv"
     if not venv_dir.exists():
         fail(
-            "Virtual environment della skill non trovato",
-            f"Crealo con: python -m venv venv (dentro '{SKILL_ROOT}'), poi attivalo "
-            f"({VENV_ACTIVATE_HINT}) e installa le dipendenze con "
-            f"'pip install -r requirements.txt'. In alternativa lancia {RUN_SCRIPT}, "
-            "che lo fa automaticamente.",
+            "Skill's virtual environment not found",
+            f"Create it with: python -m venv venv (inside '{SKILL_ROOT}'), then activate "
+            f"it ({VENV_ACTIVATE_HINT}) and install dependencies with "
+            f"'pip install -r requirements.txt'. Alternatively, run {RUN_SCRIPT}, "
+            "which does this automatically.",
         )
         return
 
     missing = [pkg for pkg in REQUIRED_PACKAGES if importlib.util.find_spec(pkg) is None]
     if missing:
         fail(
-            f"Dipendenze Python mancanti nell'ambiente corrente: {', '.join(missing)}",
-            f"Attiva il venv della skill ({VENV_ACTIVATE_HINT}) e installa le dipendenze "
-            f"con: pip install -r requirements.txt. In alternativa lancia {RUN_SCRIPT}.",
+            f"Missing Python dependencies in the current environment: {', '.join(missing)}",
+            f"Activate the skill's venv ({VENV_ACTIVATE_HINT}) and install dependencies "
+            f"with: pip install -r requirements.txt. Alternatively, run {RUN_SCRIPT}.",
         )
 
 
 def check_hf_token() -> None:
     if not os.environ.get("HF_TOKEN"):
         fail(
-            "Token Hugging Face (HF_TOKEN) non impostato",
-            "1) Crea un account su https://huggingface.co e genera un access token da "
-            "https://huggingface.co/settings/tokens. "
-            "2) Accetta le condizioni d'uso del modello "
-            "https://huggingface.co/pyannote/speaker-diarization-community-1 (loggato con lo "
-            "stesso account). "
-            "3) Imposta la variabile d'ambiente HF_TOKEN con il token, oppure passalo con "
-            "--hf-token al comando.",
+            "Hugging Face token (HF_TOKEN) not set",
+            "1) Create an account at https://huggingface.co and generate an access token "
+            "at https://huggingface.co/settings/tokens. "
+            "2) Accept the usage terms of the model "
+            "https://huggingface.co/pyannote/speaker-diarization-community-1 (logged in "
+            "with that same account). "
+            "3) Set the HF_TOKEN environment variable with the token, or pass it with "
+            "--hf-token to the command.",
         )
 
 
@@ -94,13 +94,13 @@ def main() -> int:
     check_hf_token()
 
     if not PROBLEMS:
-        print("OK: tutti i prerequisiti sono soddisfatti.")
+        print("OK: all prerequisites are satisfied.")
         return 0
 
-    print("Prerequisiti mancanti:\n")
+    print("Missing prerequisites:\n")
     for i, (title, fix) in enumerate(PROBLEMS, start=1):
         print(f"{i}. {title}")
-        print(f"   Come risolvere: {fix}\n")
+        print(f"   How to fix it: {fix}\n")
     return 1
 
 

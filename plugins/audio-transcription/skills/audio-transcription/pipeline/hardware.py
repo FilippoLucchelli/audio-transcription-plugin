@@ -1,4 +1,4 @@
-"""Rilevamento hardware e scelta dinamica di modello/device per whisperx."""
+"""Hardware detection and dynamic model/device selection for whisperx."""
 
 import os
 
@@ -6,7 +6,7 @@ import torch
 
 
 def detect_hardware() -> dict:
-    """Rileva CUDA/VRAM, numero di core CPU e RAM disponibili sulla macchina corrente."""
+    """Detects CUDA/VRAM, CPU core count, and RAM available on the current machine."""
     cuda_available = torch.cuda.is_available()
     vram_gb = None
     if cuda_available:
@@ -31,9 +31,10 @@ def detect_hardware() -> dict:
 
 
 def recommend_settings(hardware: dict | None = None) -> dict:
-    """Sceglie device/compute_type/model in base all'hardware disponibile.
+    """Picks device/compute_type/model based on the available hardware.
 
-    Ritorna anche 'reason', una spiegazione leggibile della scelta (per il log/utente).
+    Also returns 'reason', a human-readable explanation of the choice (for
+    logging/reporting to the user).
     """
     hw = hardware or detect_hardware()
 
@@ -47,7 +48,7 @@ def recommend_settings(hardware: dict | None = None) -> dict:
             model = "medium"
         else:
             model = "small"
-        reason = f"GPU CUDA rilevata con ~{vram:.1f} GB VRAM"
+        reason = f"CUDA GPU detected with ~{vram:.1f} GB VRAM"
     else:
         device = "cpu"
         compute_type = "int8"
@@ -55,16 +56,16 @@ def recommend_settings(hardware: dict | None = None) -> dict:
         ram = hw["ram_gb"]
         if ram is None:
             model = "small"
-            reason = f"Nessuna GPU CUDA; {cpu_count} core CPU (RAM non rilevabile, uso stima prudente)"
+            reason = f"No CUDA GPU; {cpu_count} CPU cores (RAM not detectable, using a conservative estimate)"
         elif cpu_count >= 8 and ram >= 16:
             model = "medium"
-            reason = f"Nessuna GPU CUDA; {cpu_count} core CPU e ~{ram:.1f} GB RAM"
+            reason = f"No CUDA GPU; {cpu_count} CPU cores and ~{ram:.1f} GB RAM"
         elif cpu_count >= 4 and ram >= 8:
             model = "small"
-            reason = f"Nessuna GPU CUDA; {cpu_count} core CPU e ~{ram:.1f} GB RAM"
+            reason = f"No CUDA GPU; {cpu_count} CPU cores and ~{ram:.1f} GB RAM"
         else:
             model = "base"
-            reason = f"Nessuna GPU CUDA; {cpu_count} core CPU e ~{ram:.1f} GB RAM (risorse limitate)"
+            reason = f"No CUDA GPU; {cpu_count} CPU cores and ~{ram:.1f} GB RAM (limited resources)"
 
     return {
         "device": device,
@@ -78,6 +79,6 @@ def recommend_settings(hardware: dict | None = None) -> dict:
 if __name__ == "__main__":
     settings = recommend_settings()
     print(f"Hardware: {settings['hardware']}")
-    print(f"Scelta consigliata: model={settings['model']} device={settings['device']} "
+    print(f"Recommended choice: model={settings['model']} device={settings['device']} "
           f"compute_type={settings['compute_type']}")
-    print(f"Motivo: {settings['reason']}")
+    print(f"Reason: {settings['reason']}")

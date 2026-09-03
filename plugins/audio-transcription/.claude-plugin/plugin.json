@@ -1,6 +1,6 @@
 {
   "name": "audio-transcription",
-  "description": "Trascrizione e diarizzazione (identificazione speaker) locale di file audio/video con WhisperX + pyannote.",
+  "description": "Local transcription and diarization (speaker identification) of audio/video files with WhisperX + pyannote.",
   "version": "1.0.0",
   "author": {
     "name": "Filippo Lucchelli",

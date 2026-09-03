@@ -1,4 +1,4 @@
-"""Esportazione della trascrizione annotata per speaker in formato testo, SRT e JSON."""
+"""Export of the speaker-annotated transcription to text, SRT, and JSON formats."""
 
 import json
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""Trascrizione con WhisperX + diarizzazione speaker (pyannote) e allineamento parola-per-parola."""
+"""Transcription with WhisperX + speaker diarization (pyannote) and word-level alignment."""
 
 import os
 from typing import Callable, Optional
@@ -22,13 +22,13 @@ def transcribe_and_diarize(
     hf_token: str | None = None,
     progress_callback: Optional[ProgressCallback] = None,
 ) -> dict:
-    """Esegue trascrizione + diarizzazione su audio_path.
+    """Runs transcription + diarization on audio_path.
 
-    Ritorna il risultato whisperx con i segmenti annotati per speaker
-    (label pyannote originali, es. "SPEAKER_00").
+    Returns the whisperx result with segments annotated per speaker
+    (original pyannote labels, e.g. "SPEAKER_00").
 
-    progress_callback, se fornito, viene chiamato con (stage, percentuale 0-100) per le fasi:
-    "load_model", "transcribe", "align", "diarize".
+    progress_callback, if provided, is called with (stage, percentage 0-100) for
+    the stages: "load_model", "transcribe", "align", "diarize".
     """
 
     def report(stage: str, pct: float) -> None:
@@ -38,13 +38,13 @@ def transcribe_and_diarize(
     hf_token = hf_token or os.environ.get("HF_TOKEN")
 
     if device == "cuda" and not torch.cuda.is_available():
-        print("Attenzione: CUDA richiesta ma non disponibile su questa macchina. Uso la CPU.")
+        print("Warning: CUDA requested but not available on this machine. Falling back to CPU.")
         device = "cpu"
 
     if not hf_token:
         raise ValueError(
-            "Token Hugging Face mancante: la diarizzazione richiede un token valido "
-            "(variabile d'ambiente HF_TOKEN o parametro --hf-token / campo nella webapp)."
+            "Missing Hugging Face token: diarization requires a valid token "
+            "(HF_TOKEN environment variable, --hf-token argument, or the webapp field)."
         )
 
     report("load_model", 0)
@@ -70,14 +70,14 @@ def transcribe_and_diarize(
         diarize_model = DiarizationPipeline(token=hf_token, device=device)
     except GatedRepoError as exc:
         raise RuntimeError(
-            "Accesso negato al modello di diarizzazione pyannote/speaker-diarization-community-1. "
-            "Visita https://huggingface.co/pyannote/speaker-diarization-community-1, accedi con "
-            "l'account a cui appartiene il token e accetta le condizioni d'uso ('Agree and access "
-            "repository'), poi riprova."
+            "Access denied to the pyannote/speaker-diarization-community-1 diarization "
+            "model. Visit https://huggingface.co/pyannote/speaker-diarization-community-1, "
+            "log in with the account the token belongs to, and accept the usage terms "
+            "('Agree and access repository'), then retry."
         ) from exc
     except HfHubHTTPError as exc:
         raise RuntimeError(
-            f"Errore nel contattare Hugging Face (token non valido o problema di rete?): {exc}"
+            f"Error contacting Hugging Face (invalid token or network issue?): {exc}"
         ) from exc
 
     try:
@@ -89,9 +89,9 @@ def transcribe_and_diarize(
         )
     except GatedRepoError as exc:
         raise RuntimeError(
-            "Accesso negato a un modello richiesto dalla pipeline di diarizzazione. Controlla il "
-            "messaggio d'errore originale per il nome del repository e accetta le condizioni d'uso "
-            "sulla relativa pagina Hugging Face."
+            "Access denied to a model required by the diarization pipeline. Check the "
+            "original error message for the repository name and accept the usage terms "
+            "on its Hugging Face page."
         ) from exc
 
     report("diarize", 100)
