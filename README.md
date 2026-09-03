@@ -3,6 +3,12 @@
 Plugin/skill for [Claude Code](https://claude.com/claude-code) that transcribes and
 diarizes (identifies speakers in) audio or video files locally, using WhisperX + pyannote.
 No data is sent to cloud services (aside from downloading models from Hugging Face).
+Works on Windows, Linux, and macOS.
+
+The whisper model, device, and compute type are picked automatically based on the
+detected hardware (CUDA/VRAM, CPU cores, RAM) unless you specify them explicitly.
+Results are cached by audio content + parameters, so asking further questions about
+the same recording doesn't re-run the (expensive) pipeline.
 
 ## Installation
 
@@ -42,8 +48,11 @@ audio-transcription-plugin/
                 ├── check_env.py       # prerequisite checker
                 ├── requirements.txt   # pipeline dependencies
                 ├── run.bat             # venv setup + run (Windows)
+                ├── run.sh              # venv setup + run (Linux/macOS)
                 └── pipeline/
                     ├── main.py
+                    ├── hardware.py       # hardware detection + dynamic model selection
+                    ├── cache.py          # result cache keyed by audio content + params
                     ├── audio_processing.py
                     ├── transcription.py
                     └── exporters.py
@@ -53,7 +62,8 @@ audio-transcription-plugin/
 
 ```bash
 cd plugins/audio-transcription/skills/audio-transcription
-run.bat "path/to/file.mp4" -o output --model medium --language en
+run.bat "path/to/file.mp4" -o output --language en    # Windows
+./run.sh "path/to/file.mp4" -o output --language en   # Linux/macOS
 ```
 
 Output is generated in `output/<name>.{txt,srt,json}`.

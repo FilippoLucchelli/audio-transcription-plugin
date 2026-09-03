@@ -29,14 +29,16 @@ python check_env.py
 
 ## Passo 2 — Esegui la trascrizione
 
-Su Windows, senza gestire venv/dipendenze a mano (`run.bat` crea il venv della
-skill e installa `requirements.txt` al primo avvio):
+Senza gestire venv/dipendenze a mano (`run.bat`/`run.sh` creano il venv della
+skill e installano `requirements.txt` al primo avvio):
 
 ```bash
-run.bat "<path al file audio o video>" -o output --model medium --language it
+run.bat "<path al file audio o video>" -o output --model medium --language it   # Windows
+./run.sh "<path al file audio o video>" -o output --model medium --language it  # Linux/macOS
 ```
 
-Oppure, con il venv della skill già attivo (`venv\Scripts\activate`):
+Oppure, con il venv della skill già attivo (`venv\Scripts\activate` su Windows,
+`source venv/bin/activate` su Linux/macOS):
 
 ```bash
 python pipeline\main.py "<path al file audio o video>" -o output --model medium --language it
@@ -95,6 +97,7 @@ audio-transcription/
 ├── check_env.py         # verifica prerequisiti, indica come risolverli
 ├── requirements.txt     # dipendenze Python della pipeline
 ├── run.bat               # crea venv, installa dipendenze, esegue la pipeline (Windows)
+├── run.sh                # equivalente di run.bat per Linux/macOS
 └── pipeline/
     ├── main.py            # entry point CLI
     ├── hardware.py          # rilevamento hardware + scelta dinamica del modello

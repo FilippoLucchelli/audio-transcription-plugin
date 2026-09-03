@@ -12,6 +12,9 @@ import sys
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).resolve().parent
+IS_WINDOWS = sys.platform.startswith("win")
+VENV_ACTIVATE_HINT = "venv\\Scripts\\activate" if IS_WINDOWS else "source venv/bin/activate"
+RUN_SCRIPT = "run.bat" if IS_WINDOWS else "run.sh"
 
 REQUIRED_PACKAGES = [
     "whisperx",
@@ -34,7 +37,7 @@ def check_python_version() -> None:
         fail(
             f"Versione Python non supportata: {major}.{minor}",
             "Installa Python 3.10, 3.11 o 3.12 da https://www.python.org/downloads/ "
-            "e ricrea il venv della skill (cancella la cartella 'venv' ed esegui di nuovo run.bat, "
+            f"e ricrea il venv della skill (cancella la cartella 'venv' ed esegui di nuovo {RUN_SCRIPT}, "
             "oppure 'python -m venv venv' dentro la cartella della skill).",
         )
 
@@ -55,8 +58,8 @@ def check_venv_and_packages() -> None:
         fail(
             "Virtual environment della skill non trovato",
             f"Crealo con: python -m venv venv (dentro '{SKILL_ROOT}'), poi attivalo "
-            "(venv\\Scripts\\activate) e installa le dipendenze con "
-            "'pip install -r requirements.txt'. In alternativa lancia run.bat, "
+            f"({VENV_ACTIVATE_HINT}) e installa le dipendenze con "
+            f"'pip install -r requirements.txt'. In alternativa lancia {RUN_SCRIPT}, "
             "che lo fa automaticamente.",
         )
         return
@@ -65,8 +68,8 @@ def check_venv_and_packages() -> None:
     if missing:
         fail(
             f"Dipendenze Python mancanti nell'ambiente corrente: {', '.join(missing)}",
-            f"Attiva il venv della skill ('{venv_dir}\\Scripts\\activate') e installa le dipendenze "
-            "con: pip install -r requirements.txt. In alternativa lancia run.bat.",
+            f"Attiva il venv della skill ({VENV_ACTIVATE_HINT}) e installa le dipendenze "
+            f"con: pip install -r requirements.txt. In alternativa lancia {RUN_SCRIPT}.",
         )
 
 
